@@ -1,2 +1,2 @@
 include requirements*.txt
-include enrollment\db
+include enrollment/db/alembic.ini
