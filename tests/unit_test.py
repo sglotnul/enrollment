@@ -1,5 +1,5 @@
 # encoding=utf8
-
+import time
 import json
 import re
 import subprocess
@@ -211,18 +211,21 @@ def print_diff(expected, response):
 def test_import():
     for index, batch in enumerate(IMPORT_BATCHES):
         print(f"Importing batch {index}")
+        t = time.time()
         status, _ = request("/imports", method="POST", data=batch)
-
         assert status == 200, f"Expected HTTP status code 200, got {status}"
+        print(time.time() - t)
 
     print("Test import passed.")
 
 
 def test_nodes():
+    t = time.time()
     status, response = request(f"/nodes/{ROOT_ID}", json_response=True)
     # print(json.dumps(response, indent=2, ensure_ascii=False))
 
     assert status == 200, f"Expected HTTP status code 200, got {status}"
+    print(time.time() - t)
 
     deep_sort_children(response)
     deep_sort_children(EXPECTED_TREE)
@@ -258,11 +261,15 @@ def test_delete():
     params = urllib.parse.urlencode({
         "date": "2022-02-04T00:00:00Z"
     })
+
+    t = time.time()
     status, _ = request(f"/delete/{ROOT_ID}?{params}", method="DELETE")
     assert status == 200, f"Expected HTTP status code 200, got {status}"
+    print(t := time.time() - t)
 
     status, _ = request(f"/nodes/{ROOT_ID}", json_response=True)
     assert status == 404, f"Expected HTTP status code 404, got {status}"
+    print(time.time() - t)
 
     print("Test delete passed.")
 
@@ -270,8 +277,8 @@ def test_delete():
 def test_all():
     test_import()
     test_nodes()
-    test_updates()
-    test_history()
+    # test_updates()
+    # test_history()
     test_delete()
 
 
