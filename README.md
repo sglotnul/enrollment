@@ -20,7 +20,7 @@
 
 - Склонировать репозиторий 
 - Скопировать файл enrollment.service в systemd
-- Запустить
+- Пнуть Димона: systemctl daemon-reload
 
 # Запуск #
 
