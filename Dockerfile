@@ -1,20 +1,14 @@
-FROM snakepacker/python:all as builder
+FROM python:3.8 as build
 
-RUN python3.8 -m venv /usr/share/python3/app
-RUN /usr/share/python3/app/bin/pip install -U pip
+RUN pip install -U pip
 
-COPY requirements.txt /mnt/
-RUN /usr/share/python3/app/bin/pip install -Ur /mnt/requirements.txt
+RUN mkdir /usr/src/enrollment
+COPY . /usr/src/enrollment
 
-COPY . /mnt/dist/
-RUN /usr/share/python3/app/bin/pip install /mnt/dist/
-
-FROM snakepacker/python:3.8 as api
-
-COPY --from=builder /usr/share/python3/app /usr/share/python3/app
+WORKDIR /usr/src/enrollment
 
 EXPOSE 8080
 
-RUN ln -snf /usr/share/python3/app/bin/analyzer-* /usr/local/bin/
+RUN pip install .
 
 CMD ["enrollment"]
