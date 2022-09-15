@@ -1,9 +1,6 @@
-from operator import or_
 from typing import List
-from datetime import datetime
 
-from sqlalchemy import select, join, or_, union
-from sqlalchemy.orm import aliased
+from sqlalchemy import select, join, union
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from aiohttp.web import json_response
