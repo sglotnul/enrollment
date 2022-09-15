@@ -286,12 +286,14 @@ def test_delete():
     t = time.time()
     status, _ = request(f"/delete/{ROOT_ID}?{params}", method="DELETE")
     assert status == 200, f"Expected HTTP status code 200, got {status}"
-    print(t := time.time() - t)
-
+    t1 = time.time() - t
+    print(t1)
+    t = time.time()
     status, _ = request(f"/nodes/{ROOT_ID}", json_response=True)
     assert status == 404, f"Expected HTTP status code 404, got {status}"
 
     print("Test delete passed.")
+    print(t1)
     print(time.time() - t)
 
 

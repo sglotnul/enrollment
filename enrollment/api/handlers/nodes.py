@@ -1,4 +1,8 @@
-from sqlalchemy import select, join, func
+from operator import or_
+from typing import List
+from datetime import datetime
+
+from sqlalchemy import select, join, or_, union
 from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,41 +12,70 @@ from aiohttp.web_exceptions import HTTPNotFound
 from .base import BaseView, parametrized_handler
 from .validation.schema import DATE_FORMAT
 
-from enrollment.db.schema import Item
+from enrollment.db.schema import Item, Relation
 from enrollment.db.types import ItemType
+from enrollment.utils.alghoritms import create_schema
 
 class NodesView(BaseView):
-    def query(self, id: str):
-        t2 = aliased(Item, name='t2')
-        return select(
-            Item,
-            func.array_remove(func.array_agg(t2.id), None)
-        ).select_from(
-            join(Item, t2, Item.id == t2.parentId, isouter=True)
-        ).where(Item.id == id).group_by(Item.id)
+    def query1(self, id: str) -> object:
+        return union(
+            select(
+                Item
+            ).select_from(
+                join(Relation, Item, Relation.childId == Item.id)
+            ).where(Relation.parentId == id),
+            select(Item).where(Item.id == id)
+        )
+            
+    def query2(self, id: str) -> object:
+        return select(Relation.parentId).where(Relation.childId == id)
 
-    async def get_intem_data_recursive(self, id: str) -> dict:
+    async def get_items(self, id: str) -> List[dict]:
+        rows = await self.session.execute(self.query1(id))
+        return [dict(item) for item in rows]
+
+    async def get_parents(self, id: str) -> List[str]:
+        rows = await self.session.execute(self.query2(id))
+        return list(rows.scalars())
+
+    def serialize_item(self, raw_data: dict) -> dict:
+        raw_data['date'] = raw_data['date'].strftime(DATE_FORMAT)
+        raw_data['type'] = raw_data['type'].value
+        return raw_data
+
+    def format_schema(self, item: dict) -> dict:
+        item['date'] = item['date'].strftime(DATE_FORMAT)
+        item['size'] = item['size'] or 0
+        t = item['type']
+        item['type'] = item['type'].value
+
+        if t == ItemType.file:
+            item['children'] = None
+        else:
+            for child in item['children']:
+                item['size'] += self.format_schema(child)
+
+        return item['size']
+
+    async def get_intem_data(self, id: str) -> dict:
         async with AsyncSession(bind=self.engine) as session:
-            data = (await session.execute(self.query(id))).first()
-            if data is None:
-                raise HTTPNotFound(text="item with id {0} not found".format(id))
-            item, children = data
+            self.session = session
 
-            data = dict(item)
-            data['size'] = data['size'] or 0
-            data['date'] = data['date'].strftime(DATE_FORMAT)
-            if item.type == ItemType.file:
-                data['children'] = None
-            else:
-                data['children'] = []
-                for child_id in children:
-                    child_data = await self.get_intem_data_recursive(child_id)
-                    data['children'].append(child_data)
-                    data['size'] += child_data['size']
-            data['type'] = data['type'].value
-            return data
+            items = await self.get_items(id)
+            parents = await self.get_parents(id)
+            
+            schema = create_schema(items, parents)
+            if len(schema) < 1:
+                exc = HTTPNotFound()
+                exc.text = "item with id {0} not found".format(id)
+                raise exc
+            
+            item_data = schema[0]
+            self.format_schema(item_data)
+            
+            return item_data
 
     @parametrized_handler
     async def get(self, id: str):
-        node_data = await self.get_intem_data_recursive(id)
+        node_data = await self.get_intem_data(id)
         return json_response(node_data)

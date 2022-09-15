@@ -11,7 +11,7 @@ from .base import BaseView
 from .validation import ImportsSchema
 
 from sqlalchemy import and_
-from sqlalchemy import select, update, delete, insert
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from enrollment.db.schema import Item, Relation
