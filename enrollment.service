@@ -10,14 +10,12 @@ WorkingDirectory=/usr/src/enrollment
 
 # Remove old containers
 ExecStartPre=/usr/local/bin/docker-compose rm -f
-ExecStartPre=-/bin/bash -c 'docker rm $(docker ps -a -q)'
-ExecStartPre=-/bin/bash -c 'docker ps -aqf "name=artifactory" | xargs docker rm'
 
 # Compose up
-ExecStart=/usr/local/bin/docker-compose -f docker-compose.yaml up -d
+ExecStart=/usr/local/bin/docker-compose up -d
 
 # Compose down, remove containers
-ExecStop=/usr/local/bin/docker-compose -f docker-compose.yaml down
+ExecStop=/usr/local/bin/docker-compose down
 
 [Install]
 WantedBy=multi-user.target
