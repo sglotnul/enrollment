@@ -25,4 +25,4 @@
 # Запуск #
 
 - Запустить сервис: docker-compose up -d (Из директории с проектом)
-- Применить миграции: docker exec {контейнера} enrollment-db upgrade head (Если необходимо)
+- Применить миграции (Если необходимо): docker exec {контейнер} enrollment-db upgrade head
