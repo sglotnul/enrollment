@@ -4,15 +4,18 @@ Requires=docker.service
 After=docker.service
 
 [Service]
-Restart=always
+Type=oneshot
+RemainAfterExit=true
 
 WorkingDirectory=/usr/src/enrollment
+
+OOMScoreAdjust=-1000
 
 # Remove old containers
 ExecStartPre=/usr/local/bin/docker-compose rm -f
 
 # Compose up
-ExecStart=/usr/local/bin/docker-compose up -d
+ExecStart=/usr/local/bin/docker-compose up -d --remove-orphans
 
 # Compose down, remove containers
 ExecStop=/usr/local/bin/docker-compose down
