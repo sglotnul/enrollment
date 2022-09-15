@@ -11,6 +11,4 @@ EXPOSE 8080
 
 RUN pip install .
 
-RUN ln -snf /usr/share/python3/app/bin/enrollment* C:\Users\Я\Desktop
-
-CMD ["enrollment", "postgresql+asyncpg://admin:admin@pg/maindb"]
+CMD ["enrollment"]

@@ -35,7 +35,7 @@ class ImportsSchema(Schema):
     updateDate = DateTime(format=DATE_FORMAT, required=True)
 
     @validates('updateDate')
-    def validate_birth_date(self, value: datetime):
+    def validate_date(self, value: datetime):
         if value > datetime.today():
             raise ValidationError("Date can't be in future")
         
@@ -48,3 +48,11 @@ class ImportsSchema(Schema):
                     'item with id %r is not unique' % item['id']
                 )
             items_ids.add(item['id'])
+
+class DateSchema(Schema):
+    date = DateTime(format=DATE_FORMAT, required=True)
+
+    @validates('date')
+    def validate_date(self, value: datetime):
+        if value > datetime.today():
+            raise ValidationError("Date can't be in future")

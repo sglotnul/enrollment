@@ -5,7 +5,8 @@ from pkg_resources import parse_requirements
 requirements_file_path = 'requirements.txt'
 
 scripts = [
-    'enrollment = enrollment.api.__main__:main'
+    'enrollment-db = enrollment.db.__main__:main',
+    'enrollment = enrollment.__main__:main'
 ]
 
 def load_requirements(fname: str) -> List[str]:

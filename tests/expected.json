@@ -30,7 +30,7 @@
           "url": "/file/url3"
         }
       ],
-      "date": "2022-02-03T19:00:00Z",
+      "date": "2022-02-03T15:00:00Z",
       "id": "1cc0129a-2bfe-474c-9ee6-d435bf5fc8f2",
       "parentId": "069cb8d7-bbdd-47d3-ad8f-82ef4c269df1",
       "size": 1600,
@@ -47,21 +47,12 @@
           "size": 128,
           "type": "FILE",
           "url": "/file/url1"
-        },
-        {
-          "children": null,
-          "date": "2022-02-03T19:00:00Z",
-          "id": "b1d8fd7d-2ae3-47d5-b2f9-0f094af800d4",
-          "parentId": "d515e43f-f3f6-4471-bb77-6b455017a2d2",
-          "size": 256,
-          "type": "FILE",
-          "url": "/file/url2"
         }
       ],
       "date": "2022-02-03T19:00:00Z",
       "id": "d515e43f-f3f6-4471-bb77-6b455017a2d2",
       "parentId": "069cb8d7-bbdd-47d3-ad8f-82ef4c269df1",
-      "size": 384,
+      "size": 128,
       "type": "FOLDER",
       "url": null
     }
@@ -69,7 +60,7 @@
   "date": "2022-02-03T19:00:00Z",
   "id": "069cb8d7-bbdd-47d3-ad8f-82ef4c269df1",
   "parentId": null,
-  "size": 1984,
+  "size": 1728,
   "type": "FOLDER",
   "url": null
 }

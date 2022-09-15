@@ -34,6 +34,6 @@ def create_schema(items: Iterable[dict], folders_in_db: Iterable[str]) -> List[d
     count = build_schema(ans)
         
     if count != len(items):
-        raise ValueError(count, str(folders_in_db))
+        raise ValueError("invalid schema")
 
     return ans

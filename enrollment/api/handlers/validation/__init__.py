@@ -1,3 +1,3 @@
-from .schema import ItemSchema, ImportsSchema
+from .schema import ItemSchema, ImportsSchema, DateSchema
 
-__all__ = ("ItemSchema", "ImportsSchema")
+__all__ = ("ItemSchema", "ImportsSchema", "DateSchema")

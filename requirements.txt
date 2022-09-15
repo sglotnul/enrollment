@@ -4,3 +4,4 @@ SQLAlchemy==1.4.41
 marshmallow==3.17.1
 asyncpgsa==0.27.1
 psycopg2==2.9.3
+configargparse==1.5.3

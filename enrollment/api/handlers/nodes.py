@@ -35,11 +35,6 @@ class NodesView(BaseView):
         rows = await self.session.execute(self.query2(id))
         return list(rows.scalars())
 
-    def serialize_item(self, raw_data: dict) -> dict:
-        raw_data['date'] = raw_data['date'].strftime(DATE_FORMAT)
-        raw_data['type'] = raw_data['type'].value
-        return raw_data
-
     def format_schema(self, item: dict) -> dict:
         item['date'] = item['date'].strftime(DATE_FORMAT)
         item['size'] = item['size'] or 0
