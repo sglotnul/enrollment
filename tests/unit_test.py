@@ -79,9 +79,28 @@ IMPORT_BATCHES = [
                 "id": "73bc3b36-02d1-4245-ab35-3106c9ee1c65",
                 "parentId": "1cc0129a-2bfe-474c-9ee6-d435bf5fc8f2",
                 "size": 64
+            },
+            {
+                "type": "FILE",
+                "url": "/file/url2",
+                "id": "b1d8fd7d-2ae3-47d5-b2f9-0f094af800d4",
+                "parentId": "1cc0129a-2bfe-474c-9ee6-d435bf5fc8f2",
+                "size": 256
             }
         ],
         "updateDate": "2022-02-03T15:00:00Z"
+    },
+    {
+        "items": [
+            {
+                "type": "FILE",
+                "url": "/file/url2",
+                "id": "b1d8fd7d-2ae3-47d5-b2f9-0f094af800d4",
+                "parentId": "d515e43f-f3f6-4471-bb77-6b455017a2d2",
+                "size": 256
+            }
+        ],
+        "updateDate": "2022-02-03T19:00:00Z"
     }
 ]
 
@@ -91,7 +110,7 @@ EXPECTED_TREE = {
     "size": 1984,
     "url": None,
     "parentId": None,
-    "date": "2022-02-03T15:00:00Z",
+    "date": "2022-02-03T19:00:00Z",
     "children": [
         {
             "type": "FOLDER",
@@ -99,7 +118,7 @@ EXPECTED_TREE = {
             "parentId": "069cb8d7-bbdd-47d3-ad8f-82ef4c269df1",
             "size": 1600,
             "url": None,
-            "date": "2022-02-03T15:00:00Z",
+            "date": "2022-02-03T19:00:00Z",
             "children": [
                 {
                     "type": "FILE",
@@ -127,7 +146,7 @@ EXPECTED_TREE = {
                     "size": 64,
                     "date": "2022-02-03T15:00:00Z",
                     "children": None
-                }
+                },
             ]
         },
         {
@@ -136,7 +155,7 @@ EXPECTED_TREE = {
             "parentId": "069cb8d7-bbdd-47d3-ad8f-82ef4c269df1",
             "size": 384,
             "url": None,
-            "date": "2022-02-02T12:00:00Z",
+            "date": "2022-02-03T19:00:00Z",
             "children": [
                 {
                     "type": "FILE",
@@ -153,11 +172,11 @@ EXPECTED_TREE = {
                     "id": "b1d8fd7d-2ae3-47d5-b2f9-0f094af800d4",
                     "parentId": "d515e43f-f3f6-4471-bb77-6b455017a2d2",
                     "size": 256,
-                    "date": "2022-02-02T12:00:00Z",
+                    "date": "2022-02-03T19:00:00Z",
                     "children": None
                 }
             ]
-        },
+        }
     ]
 }
 
@@ -215,7 +234,7 @@ def test_import():
         status, _ = request("/imports", method="POST", data=batch)
         assert status == 200, f"Expected HTTP status code 200, got {status}"
         print(time.time() - t)
-
+        
     print("Test import passed.")
 
 
@@ -225,7 +244,8 @@ def test_nodes():
     # print(json.dumps(response, indent=2, ensure_ascii=False))
 
     assert status == 200, f"Expected HTTP status code 200, got {status}"
-    print(time.time() - t)
+
+    t = time.time() - t
 
     deep_sort_children(response)
     deep_sort_children(EXPECTED_TREE)
@@ -235,6 +255,7 @@ def test_nodes():
         sys.exit(1)
 
     print("Test nodes passed.")
+    print(t)
 
 
 def test_updates():
@@ -269,16 +290,16 @@ def test_delete():
 
     status, _ = request(f"/nodes/{ROOT_ID}", json_response=True)
     assert status == 404, f"Expected HTTP status code 404, got {status}"
-    print(time.time() - t)
 
     print("Test delete passed.")
+    print(time.time() - t)
 
 
 def test_all():
     test_import()
     test_nodes()
-    # test_updates()
-    # test_history()
+    #test_updates()
+    #test_history()
     test_delete()
 
 

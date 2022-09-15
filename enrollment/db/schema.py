@@ -18,3 +18,9 @@ class Item(Model, MappingSerializable):
     parentId = Column(String, ForeignKey('items.id', ondelete='CASCADE'))
     type = Column(ItemTypeEnum, nullable=False)
     size = Column(Integer)
+
+class Relation(Model):
+    __tablename__ = 'relations'
+
+    parentId = Column(ForeignKey('items.id', ondelete='CASCADE'), primary_key=True)
+    childId = Column(ForeignKey('items.id', ondelete='CASCADE'), primary_key=True)

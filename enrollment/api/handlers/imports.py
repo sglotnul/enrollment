@@ -1,8 +1,7 @@
 from datetime import datetime
 from json import JSONDecodeError
 from select import select
-from typing import List, Union
-from collections import defaultdict
+from typing import Union, List
 
 from aiohttp.web import HTTPOk
 
@@ -12,11 +11,12 @@ from .base import BaseView
 from .validation import ImportsSchema
 
 from sqlalchemy import and_
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from enrollment.db.schema import Item
+from enrollment.db.schema import Item, Relation
 from enrollment.db.types import ItemType
+from enrollment.utils.alghoritms import create_schema
 
 def create_item(data: dict, date: datetime) -> Item:
     return Item(
@@ -28,46 +28,57 @@ def create_item(data: dict, date: datetime) -> Item:
         size=data['size']
     )
 
-def prepare_items(items, folders_in_db: List[str], date: datetime) -> List[Item]:
-    awaitable = defaultdict(lambda: [list(), False])
-    ans = []
-
-    def append(item: Item):
-        ans.append(create_item(item, date))
-        record = awaitable[item['id']]
-        record[1] = True
-        for item in record[0]:
-            append(item)
-
-    for i in items:
-        p_id = i['parentId']
-
-        record = awaitable[p_id]
-        if p_id is not None and p_id not in folders_in_db and not record[1]:
-            record[0].append(i)
-        else:
-           append(i)
-        
-    if len(ans) != len(items):
-        raise ValidationError("invalid files schema")
-
-    return ans
-
 class ImportsView(BaseView):
-    async def update_parents_recursive(self, id: Union[str, None], date: datetime):
-        if id is None:
-            return
-        await self.session.execute(update(Item).where(Item.id == id).values(date=date))
-        next_item = await self.session.execute(select(Item.parentId).where(Item.id == id))
-        next_item = next_item.scalars().first()
+    async def update_parents_recursive(self, id: Union[str, None], date: datetime) -> List[str]:
+        updated = []
+        
+        if id is not None:
+            updated.append(id)
 
-        await self.update_parents_recursive(next_item, date)
+            await self.session.execute(update(Item).where(Item.id == id).values(date=date))
+            next_item = await self.session.execute(select(Item.parentId).where(Item.id == id))
+            next_item =next_item.scalars().first()
 
-    async def validate_item(self, item: Item):
-        db_item_type = await self.session.execute(select(Item.type).where(Item.id == item.id))
-        db_item_type = db_item_type.scalars().first()
-        if db_item_type is not None and db_item_type != item.type:
-            raise ValidationError("unable to change item's type")
+            updated.extend(await self.update_parents_recursive(next_item, date))
+
+        return updated
+
+    async def insert_item(self, item: dict, date: datetime, update_parents: bool=False) -> List[str]:
+        id = item['id']
+
+        await self.session.merge(create_item(item, date))
+
+        new_children = []
+        for child in item['children']:
+            new_children.extend(await self.insert_item(child, date))
+
+        self.session.add_all(map(lambda child: Relation(parentId=id, childId=child), new_children))
+
+        row = await self.session.execute(select(Item.type, Item.parentId).where(Item.id == id))
+        entry = row.first()
+
+        db_item_type, db_item_parent = None, None
+
+        if entry is not None:
+            db_item_type, db_item_parent = entry
+
+            if db_item_type != ItemType(item['type']):
+                raise ValidationError("unable to change item's type")
+            updated_parents = await self.update_parents_recursive(db_item_parent, date)
+            if db_item_parent != item['parentId']:
+                new_children.append(id)
+                for parent in updated_parents:
+                    to_del = await self.session.get(Relation, (parent, id))
+                    await self.session.delete(to_del)
+        else:
+            new_children.append(id)
+
+        if update_parents and db_item_parent != item['parentId']:
+            updated_parents = await self.update_parents_recursive(item['parentId'], date)
+            for parent in updated_parents:
+                self.session.add_all(map(lambda child: Relation(parentId=parent, childId=child), new_children))
+
+        return new_children
 
     async def post(self):
         schema = ImportsSchema()
@@ -78,7 +89,7 @@ class ImportsView(BaseView):
         except JSONDecodeError as err:
             raise ValidationError(str(err))
 
-        async with AsyncSession(bind=self.engine) as session:
+        async with AsyncSession(bind=self.engine, autoflush=False) as session:
             self.session = session
 
             parents_to_validate = set()
@@ -88,17 +99,17 @@ class ImportsView(BaseView):
                 if id:
                     parents_to_validate.add(id)
 
-            rows = await session.execute(select(Item.id).where(and_(Item.id.in_(parents_to_validate), Item.type==ItemType.folder.value.lower())))
+            rows = await session.execute(select(Item.id).where(and_(Item.id.in_(parents_to_validate), Item.type==ItemType.folder.value.lower())).order_by(Item.id))
             await session.close()
 
-            items = prepare_items(data['items'], rows.scalars(), date=data['updateDate'])
+            try:
+                items = create_schema(data['items'], list(rows.scalars()))
+            except ValueError as err:
+                raise ValidationError(str(err))
 
             async with session.begin():
-                for i in items:
-                    await self.validate_item(i)
-
-                    await session.merge(i)
-                    await self.update_parents_recursive(i.parentId, i.date)
+                for item in items:
+                    await self.insert_item(item, data['updateDate'], True)
                 await session.commit()
 
         await self.engine.dispose()
